@@ -5,7 +5,8 @@
 
 #include <algorithm>
 
-#include "model/logger.h"
+#include "model/logger.hpp"
+#include "utility/utility.hpp"
 
 namespace FileDownloader
 {
@@ -141,7 +142,6 @@ namespace FileDownloader
 
         for( size_t i = 0; i < m_resourcesInfo.size(); ++i )
         {
-
             auto progBar = CreateWindowEx( 0,
                                            PROGRESS_CLASS,
                                            reinterpret_cast< LPTSTR >( 0 ),
@@ -245,7 +245,12 @@ namespace FileDownloader
             int y = BORDER_OFFSET + i * ( DOWNLOAD_INFO_HEIGHT );
 
             const auto& caption = m_results[i].caption;
-            const auto& status = m_results[i].status;
+            auto status = L"Status: " + m_results[i].status;
+
+            if( m_results[i].percent.size() )
+            {
+                status.append( L" - " + m_results[i].percent + L"%" );
+            }
 
             TextOut( dc, x, y, caption.c_str(), caption.size() );
             TextOut( dc, x, y + 20, status.c_str(), status.size() );
@@ -270,95 +275,89 @@ namespace FileDownloader
 
     bool DownloadWin::download( const DInfo& info, Downloader& downloader )
     {
-        auto criticalSection = [&]( const auto& lambda )
+        auto currentId = GetCurrentThreadId();
+        auto it = std::find( m_threadIDs.begin(), m_threadIDs.end(), currentId );
+        
+        int threadIndex;
+        if( it != m_threadIDs.end() )
         {
-            EnterCriticalSection( &m_lock );
+            threadIndex = std::distance( m_threadIDs.begin(), it );
+        }
+        else
+        {
+            return false;
+        }
 
-            auto currentId = GetCurrentThreadId();
-            auto it = std::find( m_threadIDs.begin(), m_threadIDs.end(), currentId );
-            if( it != m_threadIDs.end() )
+        downloader.setStatusChangedCallback(
+            [&]
             {
-                auto index = std::distance( m_threadIDs.begin(), it );
-                lambda( index );
-            }
-            else
-            {
+                EnterCriticalSection( &m_lock );
+                getDownloadingResults( threadIndex ).status = downloader.getStatus();
+                invalidateRect( nullptr, true );
                 LeaveCriticalSection( &m_lock );
-                return false;
-            }
-            LeaveCriticalSection( &m_lock );
-            return true;
-        };
+            } );
 
         downloader.setGotContentLengthCallback(
             [&]( ULONGLONG lenght )
             {
-                return criticalSection(
-                    [&]( auto index )
-                    {
-                        if( lenght > 0 )
-                        {
-                            auto constentLenght = lenght / downloader.getReadBufferSize();
-                            PostMessage( m_progressBars[index], PBM_SETRANGE32, 0, lenght );
-                        }
-                        else
-                        {
-                            SetWindowPos( m_progressBars[index],
-                                          nullptr,
-                                          0, 0, 0, 0,
-                                          SWP_HIDEWINDOW | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER );
-                        }
-                    } );
+                EnterCriticalSection( &m_lock );
+                if( lenght > 0 )
+                {
+                    PostMessage( m_progressBars[threadIndex], PBM_SETRANGE32, 0, lenght );
+                }
+                else
+                {
+                    SetWindowPos( m_progressBars[threadIndex],
+                                  nullptr,
+                                  0, 0, 0, 0,
+                                  SWP_HIDEWINDOW | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER );
+                }
+                LeaveCriticalSection( &m_lock );
+                return true;
             } );
 
         downloader.setDownloadProgressCallback(
             [&]( ULONGLONG fileSize, ULONGLONG bytesRead )
             {
-                return criticalSection(
-                    [&]( auto index )
+                EnterCriticalSection( &m_lock );
+                auto& dr = getDownloadingResults( threadIndex );
+
+                auto code = downloader.getStatusCode();
+                if( code == Downloader::EStatus::DOWNLOADING ||
+                    code == Downloader::EStatus::FINISHED )
+                {
+                    if( fileSize )
                     {
-                        int x = BORDER_OFFSET + 5;
-                        int y = BORDER_OFFSET + index * ( DOWNLOAD_INFO_HEIGHT );
+                        auto percent = static_cast< UINT >( ( static_cast< float >( bytesRead ) / fileSize ) * 100 );
+                        dr.percent = std::to_wstring( percent );
+                    }
+                }
+                invalidateRect( nullptr, true );
 
-                        std::wstring caption( downloader.getFileName() + L" - " + downloader.getStatus() );
-                        std::wstring status( L"Status: " + downloader.getStatus() );
-                        auto code = downloader.getStatusCode();
-                        if( code == Downloader::EStatus::DOWNLOADING ||
-                            code == Downloader::EStatus::FINISHED )
-                        {
-                            if( fileSize )
-                            {
-                                auto percent = static_cast< int >( ( static_cast< float >( bytesRead ) / fileSize ) * 100 );
-                                status.append( L" - " + std::to_wstring( percent ) + L"%" );
-
-                            }
-                        }
-                        invalidateRect( nullptr, true );
-
-                        setDownloadingResults( { caption, status }, index );
-
-                        PostMessage( m_progressBars[index], PBM_SETPOS, bytesRead, 0 );
-                    } );
+                PostMessage( m_progressBars[threadIndex], PBM_SETPOS, bytesRead, 0 );
+                LeaveCriticalSection( &m_lock );
+                return true;
             } );
 
-        auto currentId = GetCurrentThreadId();
         auto wcharString = downloader.getFileName();
-        Logger::info( "Thread #" +
-                      std::to_string( currentId ) +
-                      "\t downloading " +
-                      std::string( wcharString.begin(), wcharString.end() ) );
+        Logger::getInstance().info( "Thread #", 
+                                    currentId, 
+                                    "\thas started downloading ", 
+                                    std::string( wcharString.begin(), wcharString.end() ) ) ;
+
+        getDownloadingResults( threadIndex ).caption = downloader.getFileName();
 
         auto result = downloader.startDownload();
 
         wcharString = downloader.getStatus();
-        auto resultLogMsg = std::string( "Thread #" +
-                                         std::to_string( currentId ) +
-                                         "\t Resulst message:\t" +
-                                         std::string( wcharString.begin(), wcharString.end() ) );
-        if( !result )
-            Logger::error( resultLogMsg );
+        auto resultLogMsg = Utility::Concat( "Thread #", 
+                                             currentId,
+                                             "\tResulst message: ", 
+                                             std::string( wcharString.begin(), wcharString.end() ) );
+       if( !result )
+            Logger::getInstance().error( resultLogMsg );
         else
-            Logger::info( resultLogMsg );
+            Logger::getInstance().info( resultLogMsg );
 
         PostMessage( m_hWnd, UM_DOWNLOAD_FINISHED, NULL, NULL );
         return result;

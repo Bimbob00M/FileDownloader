@@ -4,7 +4,7 @@
 #include <fstream>
 #include <vector>
 
-#include "model/logger.h"
+#include "model/logger.hpp"
 
 namespace FileDownloader
 {
@@ -117,7 +117,7 @@ namespace FileDownloader
 
                 onDownloadProgress( contentLength, totalBytesRead );
             }
-            Sleep( 200 );
+            Sleep( 5 );
         }
         while( bytesRead && !isAborted() );
 
@@ -126,9 +126,7 @@ namespace FileDownloader
 
         if( isAborted() )
         {
-            setStatus( EStatus::FAILED );
-            m_file.reset();
-            DeleteFile( m_fileToDownloadInto.c_str() );
+            setStatus( EStatus::ABORTED );
         }
         else
             setStatus( EStatus::FINISHED );
@@ -255,6 +253,11 @@ namespace FileDownloader
         m_onGotContentLengthCallback = callback;
     }
 
+    void Downloader::setStatusChangedCallback( const std::function<void()>& callback ) noexcept
+    {
+        m_onStatusChanged = callback;
+    }
+
     std::wstring Downloader::getStatus() const noexcept
     {
         switch( m_status )
@@ -267,6 +270,8 @@ namespace FileDownloader
                 return { L"Finished" };
             case EStatus::FAILED:
                 return { L"Failed" };
+            case EStatus::ABORTED:
+                return { L"Aborted" };
             default:
                 return { L"Unknown error" };
         }
@@ -290,7 +295,6 @@ namespace FileDownloader
     {
         if( m_onDownLoadProgressCallback )
             m_onDownLoadProgressCallback( fileSize, totalBytesRead );
-
         return true;
     }
 
@@ -300,5 +304,23 @@ namespace FileDownloader
         if( m_onGotContentLengthCallback )
             m_onGotContentLengthCallback( length );
         return true;
+    }
+
+    void Downloader::onStatusChanged() const noexcept
+    {
+        if( m_onStatusChanged )
+            m_onStatusChanged();
+    }
+
+    void Downloader::setStatus( EStatus status ) noexcept
+    {
+        m_status = status;
+        if( status == EStatus::FAILED || 
+            status == EStatus::ABORTED )
+        {
+            m_file.reset();
+            DeleteFile( m_fileToDownloadInto.c_str() );
+        }
+        onStatusChanged();
     }
 }

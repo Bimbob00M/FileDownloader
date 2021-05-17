@@ -27,11 +27,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\model\downloader.h" />
-    <ClInclude Include="..\src\model\logger.h" />
+    <ClInclude Include="..\src\model\logger.hpp" />
     <ClInclude Include="..\src\Resource.h" />
     <ClInclude Include="..\src\utility\framework.h" />
     <ClInclude Include="..\src\utility\targetver.h" />
-    <ClInclude Include="..\src\utility\utility.h" />
+    <ClInclude Include="..\src\utility\utility.hpp" />
     <ClInclude Include="..\src\view\download_win.h" />
   </ItemGroup>
   <ItemGroup>
@@ -150,6 +150,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\res;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -167,6 +168,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\res;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

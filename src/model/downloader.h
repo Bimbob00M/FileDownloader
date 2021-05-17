@@ -8,14 +8,14 @@
 #include <functional>
 #include <vector>
 
-#include "utility/utility.h"
+#include "utility/utility.hpp"
 
 namespace FileDownloader
 {
     class Downloader
     {
     public:
-        enum class EStatus : byte { CONNECTING, DOWNLOADING, FINISHED, FAILED };
+        enum class EStatus : byte { CONNECTING, DOWNLOADING, FINISHED, FAILED, ABORTED };
 
         struct DownloadInfo
         {
@@ -44,6 +44,7 @@ namespace FileDownloader
         void setDownloadDataCallback( const std::function<bool( const BYTE* data, DWORD size )>& callback ) noexcept;
         void setDownloadProgressCallback( const std::function<bool( ULONGLONG fileSize, ULONGLONG totalBytesRead )>& callback ) noexcept;
         void setGotContentLengthCallback( const std::function<bool( ULONGLONG length )>& callback ) noexcept;
+        void setStatusChangedCallback( const std::function<void()>& callback ) noexcept;
 
         EStatus getStatusCode() const noexcept { return m_status; }
         std::wstring getStatus() const noexcept;
@@ -83,6 +84,7 @@ namespace FileDownloader
         std::function<bool( const BYTE* data, DWORD size )> m_onDownLoadDataCallback{ nullptr };
         std::function<bool( ULONGLONG fileSize, ULONGLONG totalBytesRead )> m_onDownLoadProgressCallback{ nullptr };
         std::function<bool( ULONGLONG length )> m_onGotContentLengthCallback{ nullptr };
+        std::function<void()> m_onStatusChanged{ nullptr };
 
 //-----------functions-----------------------------
 
@@ -96,11 +98,12 @@ namespace FileDownloader
         static bool queryStatusCode( HINTERNET hInternet, DWORD& outCode ) noexcept;
         static bool queryContentLength( HINTERNET hInternet, ULONGLONG& nCode );
 
-        virtual bool onDownloadData( const BYTE* data, DWORD size ) const noexcept;
-        virtual bool onDownloadProgress( ULONGLONG fileSize, ULONGLONG totalBytesRead ) const noexcept;
-        virtual bool onGotContentLength( ULONGLONG length ) const noexcept;
+        inline virtual bool onDownloadData( const BYTE* data, DWORD size ) const noexcept;
+        inline virtual bool onDownloadProgress( ULONGLONG fileSize, ULONGLONG totalBytesRead ) const noexcept;
+        inline virtual bool onGotContentLength( ULONGLONG length ) const noexcept;
+        inline virtual void onStatusChanged() const noexcept;
 
-        inline void setStatus( EStatus status ) noexcept { m_status = status; }
+        inline void setStatus( EStatus status ) noexcept;
         
     };
 }

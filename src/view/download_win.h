@@ -70,6 +70,7 @@ namespace FileDownloader
         {
             std::wstring caption;
             std::wstring status;
+            std::wstring percent;
         };
 
         const std::vector< DInfo >& m_resourcesInfo;
@@ -95,7 +96,9 @@ namespace FileDownloader
         static LRESULT windowProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam );
         bool download( const DInfo& info, Downloader& downloader );
         static DWORD WINAPI downloadInThread( PVOID param );
-        void setDownloadingResults( const DownloadingResults result, size_t index );
+
+        inline void setDownloadingResults( const DownloadingResults result, size_t index );
+        inline DownloadingResults& getDownloadingResults( size_t index ) { return m_results[index]; };
     };
 
 } // namespace FileDownloader

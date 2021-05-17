@@ -13,10 +13,10 @@
     <ClInclude Include="..\src\model\downloader.h">
       <Filter>src\model</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\model\logger.h">
+    <ClInclude Include="..\src\model\logger.hpp">
       <Filter>src\model</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\utility\utility.h">
+    <ClInclude Include="..\src\utility\utility.hpp">
       <Filter>src\utility</Filter>
     </ClInclude>
     <ClInclude Include="..\src\view\download_win.h">

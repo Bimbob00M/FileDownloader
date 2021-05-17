@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "model/downloader.h"
-#include "model/logger.h"
+#include "model/logger.hpp"
 #include "utility/framework.h"
 #include "view/download_win.h"
 
@@ -13,17 +13,31 @@ int APIENTRY wWinMain( _In_ HINSTANCE hInstance,
                        _In_ int       nCmdShow )
 {
     using namespace FileDownloader;
-    Logger::init( "log.txt" );
-    
+    Logger::getInstance().init( "log.txt" );
+
     int argc = 0;
     auto argv = CommandLineToArgvW( lpCmdLine, &argc );
 
     if( !argv )
+    {
+        MessageBox( nullptr,
+                    L"Command arguments parse error. Cannot working.",
+                    L"Invalid arguments",
+                    MB_ICONERROR | MB_OK );
         return 1;
+    }
 
     std::vector< Downloader::DownloadInfo > info;
-    size_t pairedParamsNum = ( argc % 2 ) == 0 ? argc : argc - 1;
-    for( size_t i = 0; i < pairedParamsNum; i += 2 )
+    if( argc % 2 != 0 )
+    {
+        argc -= 1;
+        MessageBox( nullptr,
+                    L"An odd number of command argments were passed. An even number will be used.",
+                    L"Invalid arguments",
+                    MB_ICONWARNING | MB_OK );
+    }
+
+    for( int i = 0; i < argc; i += 2 )
     {
         std::wstring downloadInto = argv[i];
         std::wstring url = argv[i + 1];
@@ -33,6 +47,12 @@ int APIENTRY wWinMain( _In_ HINSTANCE hInstance,
     FileDownloader::DownloadWin win( info );
     if( !win.create( L"FileDownloader", WS_DLGFRAME | WS_SYSMENU ) )
     {
+        auto error = GetLastError();
+        std::wstring errorMsg = L"Something went wrong." + std::to_wstring( error );
+        MessageBox( nullptr,
+                    errorMsg.c_str(),
+                    L"Iternal error.",
+                    MB_ICONERROR | MB_OK );
         return 1;
     }
     win.show( nCmdShow );
