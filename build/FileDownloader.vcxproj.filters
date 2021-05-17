@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="..\src\Resource.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utility\framework.h">
+      <Filter>src\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utility\targetver.h">
+      <Filter>src\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\model\downloader.h">
+      <Filter>src\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\model\logger.h">
+      <Filter>src\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utility\utility.h">
+      <Filter>src\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\view\download_win.h">
+      <Filter>src\view</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{4f92323c-6864-4ad5-abe0-f00c9faabb5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\utility">
+      <UniqueIdentifier>{30507950-386e-4189-84f9-776911c57928}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="res">
+      <UniqueIdentifier>{bfd93bac-df89-4bf6-bc11-6640b3fd7344}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\model">
+      <UniqueIdentifier>{1f9a881b-8acc-4581-a0b1-fc07022430a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\view">
+      <UniqueIdentifier>{073a9341-4ff8-42ae-82b9-563ae49f6a9e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\model\downloader.cpp">
+      <Filter>src\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\model\logger.cpp">
+      <Filter>src\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\utility\utility.cpp">
+      <Filter>src\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\view\download_win.cpp">
+      <Filter>src\view</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\res\FileDownloader.ico">
+      <Filter>res</Filter>
+    </Image>
+    <Image Include="..\res\small.ico">
+      <Filter>res</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\res\FileDownloader.rc">
+      <Filter>res</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>
