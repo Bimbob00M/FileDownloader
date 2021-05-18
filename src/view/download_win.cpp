@@ -14,10 +14,11 @@ namespace FileDownloader
     static constexpr int PB_WIDTH = 400;
     //progress bar heihgt
     static constexpr int PB_HEIGHT = 20;
-    static constexpr int DOWNLOAD_INFO_LABEL_HEIGHT = 40;
+    static constexpr int DOWNLOAD_INFO_LABEL_HEIGHT = PB_HEIGHT * 2;
     static constexpr int AFTER_PB_SPACE = 10;
     static constexpr int DOWNLOAD_INFO_HEIGHT = PB_HEIGHT + DOWNLOAD_INFO_LABEL_HEIGHT + AFTER_PB_SPACE;
     static constexpr int BORDER_OFFSET = 15;
+    static constexpr int TEXT_LEFT_OFFSET = 5;
 
     static constexpr unsigned int UM_DOWNLOAD_FINISHED{ WM_APP + 1 };
 
@@ -72,6 +73,9 @@ namespace FileDownloader
             HANDLE_MSG( m_hWnd, WM_DESTROY, onDestroy );
             HANDLE_MSG( m_hWnd, WM_PAINT, onPaint );
 
+            case WM_ERASEBKGND:
+                return 1; 
+
             case UM_DOWNLOAD_FINISHED:
                 onDownloadFinished();
                 break;
@@ -118,7 +122,6 @@ namespace FileDownloader
         }
     }
 
-
     bool DownloadWin::onCreate( HWND hWnd, LPCREATESTRUCT lpCreateStruct )
     {
         if( m_resourcesInfo.empty() )
@@ -126,13 +129,19 @@ namespace FileDownloader
 
         InitCommonControls();
 
+        constexpr int winWidth = BORDER_OFFSET * 3 + PB_WIDTH;
+        const int winHeight = BORDER_OFFSET * 3 + DOWNLOAD_INFO_HEIGHT * m_resourcesInfo.size() + PB_HEIGHT;
+
+        SetWindowPos( m_hWnd,
+                      nullptr,
+                      0, 0, winWidth, winHeight,
+                      SWP_NOMOVE | SWP_NOZORDER );
+
         if( HDC hWinDC = GetDC( m_hWnd ) )
         {
             if( m_memDC = CreateCompatibleDC( hWinDC ) )
             {
-                RECT clientRect;
-                GetClientRect( m_hWnd, &clientRect );
-                if( m_memBitmap = CreateCompatibleBitmap( hWinDC, clientRect.right, clientRect.bottom ) )
+                if( m_memBitmap = CreateCompatibleBitmap( hWinDC, winWidth, winHeight ) )
                 {
                     DeleteObject( SelectObject( m_memDC, m_memBitmap ) );
                 }
@@ -159,14 +168,6 @@ namespace FileDownloader
 
             m_progressBars.push_back( progBar );
         }
-
-        constexpr int winWidth = BORDER_OFFSET * 3 + PB_WIDTH;
-        const int winHeight = BORDER_OFFSET * 3 + DOWNLOAD_INFO_HEIGHT * m_progressBars.size() + PB_HEIGHT;
-
-        SetWindowPos( m_hWnd,
-                      nullptr,
-                      0, 0, winWidth, winHeight,
-                      SWP_NOMOVE | SWP_NOZORDER );
 
         m_threadIDs.resize( m_resourcesInfo.size() );
         m_threadDownloaders.reserve( m_resourcesInfo.size() );
@@ -241,7 +242,7 @@ namespace FileDownloader
 
         for( int i = 0; i < m_results.size(); ++i )
         {
-            int x = BORDER_OFFSET + 5;
+            int x = BORDER_OFFSET + TEXT_LEFT_OFFSET;
             int y = BORDER_OFFSET + i * ( DOWNLOAD_INFO_HEIGHT );
 
             const auto& caption = m_results[i].caption;
@@ -253,12 +254,15 @@ namespace FileDownloader
             }
 
             TextOut( dc, x, y, caption.c_str(), caption.size() );
-            TextOut( dc, x, y + 20, status.c_str(), status.size() );
-
+            TextOut( dc, x, y + PB_HEIGHT, status.c_str(), status.size() );
         }
 
         if( m_memDC )
-            BitBlt( ps.hdc, 0, 0, width, height, m_memDC, 0, 0, SRCCOPY );
+        {
+            int x = ps.rcPaint.left;
+            int y = ps.rcPaint.top;
+            BitBlt( ps.hdc, x, y, width, height, m_memDC, x, y, SRCCOPY );
+        }
 
         EndPaint( hWnd, &ps );
     }
@@ -277,7 +281,7 @@ namespace FileDownloader
     {
         auto currentId = GetCurrentThreadId();
         auto it = std::find( m_threadIDs.begin(), m_threadIDs.end(), currentId );
-        
+
         int threadIndex;
         if( it != m_threadIDs.end() )
         {
@@ -288,12 +292,17 @@ namespace FileDownloader
             return false;
         }
 
+        int x = BORDER_OFFSET + TEXT_LEFT_OFFSET;
+        int y = BORDER_OFFSET + threadIndex * ( DOWNLOAD_INFO_HEIGHT ) + PB_HEIGHT;
+
+        RECT invalidRect{ x, y, x + PB_WIDTH, y + PB_HEIGHT };
+
         downloader.setStatusChangedCallback(
             [&]
             {
                 EnterCriticalSection( &m_lock );
                 getDownloadingResults( threadIndex ).status = downloader.getStatus();
-                invalidateRect( nullptr, true );
+                invalidateRect( &invalidRect, true );
                 LeaveCriticalSection( &m_lock );
             } );
 
@@ -332,7 +341,7 @@ namespace FileDownloader
                         dr.percent = std::to_wstring( percent );
                     }
                 }
-                invalidateRect( nullptr, true );
+                invalidateRect( &invalidRect, true );
 
                 PostMessage( m_progressBars[threadIndex], PBM_SETPOS, bytesRead, 0 );
                 LeaveCriticalSection( &m_lock );
@@ -340,21 +349,21 @@ namespace FileDownloader
             } );
 
         auto wcharString = downloader.getFileName();
-        Logger::getInstance().info( "Thread #", 
-                                    currentId, 
-                                    "\thas started downloading ", 
-                                    std::string( wcharString.begin(), wcharString.end() ) ) ;
+        Logger::getInstance().info( "Thread #",
+                                    currentId,
+                                    "\thas started downloading ",
+                                    std::string( wcharString.begin(), wcharString.end() ) );
 
         getDownloadingResults( threadIndex ).caption = downloader.getFileName();
 
         auto result = downloader.startDownload();
 
         wcharString = downloader.getStatus();
-        auto resultLogMsg = Utility::Concat( "Thread #", 
+        auto resultLogMsg = Utility::Concat( "Thread #",
                                              currentId,
-                                             "\tResulst message: ", 
+                                             "\tResulst message: ",
                                              std::string( wcharString.begin(), wcharString.end() ) );
-       if( !result )
+        if( !result )
             Logger::getInstance().error( resultLogMsg );
         else
             Logger::getInstance().info( resultLogMsg );
