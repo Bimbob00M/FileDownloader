@@ -80,8 +80,8 @@ namespace FileDownloader
                 {
                     DeleteObject( SelectObject( m_memDC, m_memBitmap ) );
                 }
-                ReleaseDC( m_hWnd, hWinDC );
             }
+            ReleaseDC( m_hWnd, hWinDC );
         }
 
         for( size_t i = 0; i < m_resourcesInfo.size(); ++i )
