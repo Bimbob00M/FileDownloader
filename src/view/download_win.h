@@ -1,44 +1,32 @@
 #pragma once
 
-#include <Windows.h>
 #include <process.h>
 
 #include <vector>
 
 #include "model/downloader.h"
+#include "base_window.h"
 
 namespace FileDownloader
 {
     typedef unsigned( WINAPI* PTHREAD_START ) ( void* );
 
-    class DownloadWin
+    class DownloadWin : public BaseWindow
     {
         using DInfo = Downloader::DownloadInfo;
     public:
         DownloadWin( const std::vector< DInfo >& info ) noexcept;
-        virtual ~DownloadWin() noexcept;
+        ~DownloadWin() noexcept;
 
-        BOOL create( PCWSTR lpWindowName,
-                     DWORD dwStyle,
-                     DWORD dwExStyle = 0,
-                     int x = CW_USEDEFAULT,
-                     int y = CW_USEDEFAULT,
-                     int nWidth = CW_USEDEFAULT,
-                     int nHeight = CW_USEDEFAULT,
-                     HWND hWndParent = 0,
-                     HMENU hMenu = 0 );
+        DownloadWin( const DownloadWin& ) = delete;
+        DownloadWin& operator=( const DownloadWin& ) = delete;
+        DownloadWin( DownloadWin&& ) = delete;
+        DownloadWin& operator=( DownloadWin&& ) = delete;
 
-        inline BOOL show( int nCmdShow ) { return ShowWindow( m_hWnd, nCmdShow ); }
-        inline BOOL update() { return UpdateWindow( m_hWnd ); }
-        inline BOOL invalidateRect( const RECT* rect, bool erase = false ) { return InvalidateRect( m_hWnd, rect, erase ); };
-
-        inline HWND   getHandle() const { return m_hWnd; }
-        inline PCWSTR getClassName() const { return L"Main Window"; };
+        virtual PCWSTR getClassName() const { return L"MainWindow"; }
 
     protected:
-        virtual void initWndClass( WNDCLASSEX& outWndClass ) const;
-
-        virtual LRESULT handleMessage( UINT msg, WPARAM wParam, LPARAM lParam );
+        virtual LRESULT handleMessage( UINT msg, WPARAM wParam, LPARAM lParam ) override;
 
         virtual bool onCreate( HWND hWnd, LPCREATESTRUCT lpCreateStruct );
         virtual void onClose( HWND hWnd );
@@ -82,18 +70,9 @@ namespace FileDownloader
 
         CRITICAL_SECTION m_lock;
 
-        HWND m_hWnd{ nullptr };
-
         HDC m_memDC{ nullptr };
         HBITMAP m_memBitmap{ nullptr };
 
-        DownloadWin( const DownloadWin& ) = delete;
-        DownloadWin& operator=( const DownloadWin& ) = delete;
-        DownloadWin( DownloadWin&& ) = delete;
-        DownloadWin& operator=( DownloadWin&& ) = delete;
-
-        inline ATOM registerClass() const;
-        static LRESULT windowProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam );
         bool download( const DInfo& info, Downloader& downloader );
         static DWORD WINAPI downloadInThread( PVOID param );
 

@@ -23,7 +23,8 @@ namespace FileDownloader
     static constexpr unsigned int UM_DOWNLOAD_FINISHED{ WM_APP + 1 };
 
     DownloadWin::DownloadWin( const std::vector< Downloader::DownloadInfo >& info ) noexcept
-        : m_resourcesInfo( info )
+        : BaseWindow{}
+        , m_resourcesInfo( info )
     {
         InitializeCriticalSection( &m_lock );
     }
@@ -32,36 +33,6 @@ namespace FileDownloader
     {
         DeleteCriticalSection( &m_lock );
         SendMessage( m_hWnd, WM_CLOSE, NULL, NULL );
-    }
-
-    BOOL DownloadWin::create( PCWSTR lpWindowName, DWORD dwStyle, DWORD dwExStyle, int x, int y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu )
-    {
-        if( !registerClass() )
-            return false;
-
-        m_hWnd = CreateWindowEx( dwExStyle,
-                                 getClassName(),
-                                 lpWindowName,
-                                 dwStyle,
-                                 x,
-                                 y,
-                                 nWidth,
-                                 nHeight,
-                                 hWndParent,
-                                 hMenu,
-                                 GetModuleHandle( nullptr ),
-                                 this );
-
-        return m_hWnd ? true : false;
-    }
-
-    void DownloadWin::initWndClass( WNDCLASSEX& outWndClass ) const
-    {
-        outWndClass.hInstance = GetModuleHandle( nullptr );
-        outWndClass.lpfnWndProc = windowProc;
-        outWndClass.style = CS_HREDRAW | CS_VREDRAW;
-        outWndClass.hbrBackground = reinterpret_cast< HBRUSH >( COLOR_WINDOW + 1 );
-        outWndClass.lpszClassName = getClassName();
     }
 
     LRESULT DownloadWin::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
@@ -84,42 +55,6 @@ namespace FileDownloader
                 return DefWindowProc( m_hWnd, msg, wParam, lParam );
         }
         return 0L;
-    }
-
-    inline ATOM DownloadWin::registerClass() const
-    {
-        WNDCLASSEX wcex{};
-        wcex.cbSize = sizeof( WNDCLASSEX );
-        initWndClass( wcex );
-
-        return RegisterClassEx( &wcex );
-    }
-
-    LRESULT DownloadWin::windowProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
-    {
-        DownloadWin* pThis = nullptr;
-
-        if( msg == WM_NCCREATE )
-        {
-            CREATESTRUCT* pCreate = reinterpret_cast< CREATESTRUCT* >( lParam );
-            pThis = reinterpret_cast< DownloadWin* >( pCreate->lpCreateParams );
-            SetWindowLongPtr( hWnd, GWLP_USERDATA, reinterpret_cast< LONG_PTR >( pThis ) );
-
-            pThis->m_hWnd = hWnd;
-        }
-        else
-        {
-            pThis = reinterpret_cast< DownloadWin* >( GetWindowLongPtr( hWnd, GWLP_USERDATA ) );
-        }
-
-        if( pThis )
-        {
-            return pThis->handleMessage( msg, wParam, lParam );
-        }
-        else
-        {
-            return DefWindowProc( hWnd, msg, wParam, lParam );
-        }
     }
 
     bool DownloadWin::onCreate( HWND hWnd, LPCREATESTRUCT lpCreateStruct )

@@ -22,13 +22,13 @@
     <ClInclude Include="..\src\view\download_win.h">
       <Filter>src\view</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\view\base_window.h">
+      <Filter>src\view</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
       <UniqueIdentifier>{4f92323c-6864-4ad5-abe0-f00c9faabb5f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\utility">
-      <UniqueIdentifier>{30507950-386e-4189-84f9-776911c57928}</UniqueIdentifier>
     </Filter>
     <Filter Include="res">
       <UniqueIdentifier>{bfd93bac-df89-4bf6-bc11-6640b3fd7344}</UniqueIdentifier>
@@ -38,6 +38,9 @@
     </Filter>
     <Filter Include="src\view">
       <UniqueIdentifier>{073a9341-4ff8-42ae-82b9-563ae49f6a9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\utility">
+      <UniqueIdentifier>{30507950-386e-4189-84f9-776911c57928}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -54,6 +57,9 @@
       <Filter>src\utility</Filter>
     </ClCompile>
     <ClCompile Include="..\src\view\download_win.cpp">
+      <Filter>src\view</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\view\base_window.cpp">
       <Filter>src\view</Filter>
     </ClCompile>
   </ItemGroup>
