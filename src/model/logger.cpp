@@ -20,14 +20,14 @@ namespace FileDownloader
     {
         EnterCriticalSection( &m_lock );
         m_filename = filename;
-        auto result = open();
+        bool result = open();
         LeaveCriticalSection( &m_lock );
         return result;
     }
 
     bool Logger::open()
     {
-        FILE* newFile = nullptr;
+        FILE* newFile{ nullptr };
         if( ( fopen_s( &newFile, m_filename.c_str(), "w+b" ) != 0 ) )
             return false;
 

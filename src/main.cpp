@@ -15,7 +15,7 @@ int APIENTRY wWinMain( _In_ HINSTANCE hInstance,
     using namespace FileDownloader;
     Logger::getInstance().init( "log.txt" );
 
-    int argc = 0;
+    int argc{};
     auto argv = CommandLineToArgvW( lpCmdLine, &argc );
 
     if( !argv )

@@ -42,9 +42,9 @@ namespace FileDownloader
             DownloadWin* pThis{ nullptr };
 
             DInfoWrapper( const DInfo& downloadInfo, Downloader* downloader,  DownloadWin* pThis )
-                : downloader( downloader )
-                , downloadInfo( downloadInfo )
-                , pThis( pThis )
+                : downloader{ downloader }
+                , downloadInfo{ downloadInfo }
+                , pThis{ pThis }
             {}
 
             ~DInfoWrapper()

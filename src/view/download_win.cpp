@@ -24,7 +24,7 @@ namespace FileDownloader
 
     DownloadWin::DownloadWin( const std::vector< Downloader::DownloadInfo >& info ) noexcept
         : BaseWindow{}
-        , m_resourcesInfo( info )
+        , m_resourcesInfo{ info }
     {
         InitializeCriticalSection( &m_lock );
     }
@@ -136,9 +136,13 @@ namespace FileDownloader
         {
             downloader.get()->abort();
         }
+
         WaitForMultipleObjects( m_threads.size(), m_threads.data(), true, INFINITE );
+
         if( m_hWnd )
+        {
             DestroyWindow( hWnd );
+        }
     }
 
     void DownloadWin::onDestroy( HWND hWnd )
@@ -217,15 +221,12 @@ namespace FileDownloader
         auto currentId = GetCurrentThreadId();
         auto it = std::find( m_threadIDs.begin(), m_threadIDs.end(), currentId );
 
-        int threadIndex;
-        if( it != m_threadIDs.end() )
-        {
-            threadIndex = std::distance( m_threadIDs.begin(), it );
-        }
-        else
+        if( it == m_threadIDs.end() )
         {
             return false;
         }
+
+        int threadIndex = std::distance( m_threadIDs.begin(), it );
 
         int x = BORDER_OFFSET + TEXT_LEFT_OFFSET;
         int y = BORDER_OFFSET + threadIndex * ( DOWNLOAD_INFO_HEIGHT ) + PB_HEIGHT;
@@ -309,7 +310,7 @@ namespace FileDownloader
 
     DWORD WINAPI DownloadWin::downloadInThread( PVOID param )
     {
-        auto data = reinterpret_cast< DownloadWin::DInfoWrapper* >( param );
+        auto data = reinterpret_cast< DInfoWrapper* >( param );
         if( data && data->pThis && data->downloader )
             data->pThis->download( data->downloadInfo, *data->downloader );
 
@@ -317,7 +318,7 @@ namespace FileDownloader
         return 0;
     }
 
-    void DownloadWin::setDownloadingResults( const DownloadWin::DownloadingResults result, size_t index )
+    void DownloadWin::setDownloadingResults( const DownloadingResults result, size_t index )
     {
         m_results[index] = result;
     }

@@ -14,7 +14,7 @@ namespace FileDownloader
         , m_fileToDownloadInto{ info.downloadInto }
     {
 
-        FILE* newFile = nullptr;
+        FILE* newFile{ nullptr };
         std::string downloadIntoFile( info.downloadInto.begin(), info.downloadInto.end() );
         if( fopen_s( &newFile, downloadIntoFile.c_str(), "w+b" ) == 0 )
             m_file = TFileHandle( newFile );
@@ -84,17 +84,17 @@ namespace FileDownloader
         }
 
         //Get the length of the file
-        ULONGLONG contentLength = 0;
+        ULONGLONG contentLength{ 0 };
         queryContentLength( m_hRequest, contentLength );
         onGotContentLength( contentLength );
 
         setStatus( EStatus::DOWNLOADING );
 
         //Now do the actual read of the file
-        DWORD bytesRead = 0;
+        DWORD bytesRead{ 0 };
         std::vector<BYTE> readBuffer;
         readBuffer.resize( m_readBufferSize );
-        ULONGLONG totalBytesRead = 0;
+        ULONGLONG totalBytesRead{ 0 };
         do
         {
             if( !WinHttpReadData( m_hRequest, readBuffer.data(), m_readBufferSize, &bytesRead ) )
